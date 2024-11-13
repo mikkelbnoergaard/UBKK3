@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.repository.FirebaseRepository
+import com.example.ubkk3.state.TournamentState
+import com.example.ubkk3.ui.event.TournamentEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +66,43 @@ class TournamentScreenViewModel(application: Application) : AndroidViewModel(app
         fetchActiveTournaments()
     }
 
+    fun onEvent(event: TournamentEvent) {
+        when (event) {
+            is TournamentEvent.SelectTournament -> {
+                viewModelScope.launch {
+                    _tournamentState.update {
+                        it.copy(
+                            selectedTournament = repository.loadTournamentById(event.tournamentId)
+                        )
+                    }
+                }
+                print("Selected tournament: ${_tournamentState.value.selectedTournament}")
+            }
+
+            is TournamentEvent.UpdateMatchWinner -> {
+                viewModelScope.launch {
+                    repository.updateMatchResult(event.tournamentId, event.matchId, event.winnerId)
+                }
+            }
+
+            is TournamentEvent.FetchTournaments -> {
+                fetchActiveTournaments()
+            }
+
+            is TournamentEvent.UpdateZoomLevel -> {
+                _zoomLevel.value = event.zoomLevel
+            }
+
+            is TournamentEvent.UpdateOffsetX -> {
+                _offsetX.value = event.offsetX
+            }
+
+            is TournamentEvent.UpdateOffsetY -> {
+                _offsetY.value = event.offsetY
+            }
+        }
+    }
+
     fun loadMatchDetails(matchDetails: MatchDetails) {
         _matchDetails.value = matchDetails
     }
@@ -109,13 +148,3 @@ class TournamentScreenViewModel(application: Application) : AndroidViewModel(app
         _offsetY.value = newOffsetY
     }
 }
-
-data class TournamentState(
-    val activeTournaments: List<Tournament> = emptyList(),
-    val selectedTournament: Tournament? = null,
-    val matchDetails: MatchDetails? = null,
-    val zoomLevel: Float = 0.2f,
-    val offsetX: Float = 0f,
-    val offsetY: Float = 0f,
-
-)

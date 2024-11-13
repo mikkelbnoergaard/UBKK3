@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                     val tournamentScreenViewModel = viewModel<TournamentScreenViewModel>()
                     val tournaments = tournamentScreenViewModel.activeTournaments.collectAsStateWithLifecycle().value
                     val tournamentState by tournamentScreenViewModel.tournamentState.collectAsState()
+                    val onTournamentEvent = tournamentScreenViewModel::onEvent
 
 
                     NavHost(navController = navController, startDestination = "sign_in") {
@@ -195,7 +196,8 @@ class MainActivity : ComponentActivity() {
                                     when(index){
                                         0 -> TournamentScreen(
                                             navController = navController,
-                                            tournamentState = tournamentState
+                                            tournamentState = tournamentState,
+                                            onTournamentEvent = onTournamentEvent
                                         )
                                         1 -> Stats()
                                         2 -> if (googleAuthUiClient.getSignedInUser()?.isAdmin == true){

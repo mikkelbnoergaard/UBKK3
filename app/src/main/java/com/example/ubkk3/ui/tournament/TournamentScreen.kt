@@ -20,6 +20,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
+import com.example.ubkk3.state.TournamentState
+import com.example.ubkk3.ui.event.TournamentEvent
 import kotlinx.coroutines.delay
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -27,35 +29,29 @@ import kotlinx.serialization.json.Json
 @Composable
 fun TournamentScreen(
     navController: NavController,
-    tournamentState: TournamentState
+    tournamentState: TournamentState,
+    onTournamentEvent: (TournamentEvent) -> Unit
 ) {
-
-    val viewModel: TournamentScreenViewModel = viewModel()
-    val activeTournaments by viewModel.activeTournaments.collectAsState()
-    val selectedTournament by viewModel.selectedTournament.collectAsState()
-    val zoomLevel by viewModel.zoomLevel.collectAsState()
-    val offsetX by viewModel.offsetX.collectAsState()
-    val offsetY by viewModel.offsetY.collectAsState()
 
     Column(
         verticalArrangement = Arrangement.Top
     ) {
+
         TopBar(
-            activeTournaments = activeTournaments,
-            selectedTournament = tournamentState.selectedTournament,
-            onTournamentSelected = { viewModel.selectTournament(it) },
-            onDropdownExpanded = { viewModel.refreshActiveTournaments() }
+            activeTournaments = tournamentState.activeTournaments,
+            tournamentState,
+            onTournamentEvent
         )
-        selectedTournament?.let {
+        tournamentState.selectedTournament?.let {
             Tournaments(
                 navController = navController,
-                tournament = tournamentState.selectedTournament!!,
-                zoomLevel = zoomLevel,
-                offsetX = offsetX,
-                offsetY = offsetY,
-                onZoomLevelChange = { viewModel.updateZoomLevel(it) },
-                onOffsetXChange = { viewModel.updateOffsetX(it) },
-                onOffsetYChange = { viewModel.updateOffsetY(it) }
+                tournament = it,
+                zoomLevel = tournamentState.zoomLevel,
+                offsetX = tournamentState.offsetX,
+                offsetY = tournamentState.offsetY,
+                onZoomLevelChange = { onTournamentEvent(TournamentEvent.UpdateZoomLevel(it)) },
+                onOffsetXChange = { onTournamentEvent(TournamentEvent.UpdateOffsetX(it)) },
+                onOffsetYChange = { onTournamentEvent(TournamentEvent.UpdateOffsetY(it)) }
             )
         }
     }
@@ -65,21 +61,20 @@ fun TournamentScreen(
 @Composable
 fun TopBar(
     activeTournaments: List<Tournament>,
-    selectedTournament: Tournament?,
-    onTournamentSelected: (Tournament) -> Unit,
-    onDropdownExpanded: () -> Unit
+    tournamentState: TournamentState,
+    onTournamentEvent: (TournamentEvent) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = {
-            Text(text = selectedTournament?.tournamentName ?: "Select Tournament")
+            Text(text = tournamentState.selectedTournament?.tournamentName ?: "Select Tournament")
         },
         actions = {
             Box {
                 IconButton(onClick = {
                     expanded = true
-                    onDropdownExpanded()
+                    onTournamentEvent(TournamentEvent.FetchTournaments)
                 }) {
                     Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Tournament")
                 }
@@ -91,7 +86,7 @@ fun TopBar(
                         DropdownMenuItem(
                             text = { Text(tournament.tournamentName) },
                             onClick = {
-                                onTournamentSelected(tournament)
+                                onTournamentEvent(TournamentEvent.SelectTournament(tournament.id))
                                 expanded = false
                             }
                         )

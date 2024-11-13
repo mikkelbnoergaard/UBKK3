@@ -253,4 +253,20 @@ class FirebaseRepository(private val context: Context) {
             Log.e("FirebaseRepository", "Error updating match result", e)
         }
     }
+
+    suspend fun loadTournamentById(tournamentId: String): Tournament? {
+        return try {
+            val tournamentDoc = database.collection("tournaments").document(tournamentId).get().await()
+            tournamentDoc.toObject(Tournament::class.java)?.copy(
+                id = tournamentDoc.id,
+                matches = loadMatchesFromTournament(tournamentDoc.id)
+            )
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                Log.d("Error loading tournament", e.message.toString())
+            }
+            null
+        }
+    }
 }
