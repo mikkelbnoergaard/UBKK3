@@ -66,7 +66,7 @@ fun CreateTournamentScreen(
 ) {
     val teams by rememberUpdatedState(adminState.teams)
     var showDialog by rememberSaveable { mutableStateOf(false) }
-    val tournamentTitle by rememberUpdatedState(adminState.createTournamentTitle)
+    val tournamentTitle = remember { mutableStateOf(title) }
     var currentTeam by rememberSaveable { mutableStateOf(TeamDetails("", "", Player("","",0,0,0), Player("","",0,0,0))) }
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var showConfirmCreateDialog by remember { mutableStateOf(false) }
@@ -103,7 +103,7 @@ fun CreateTournamentScreen(
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp)
         ) {
-            Text(text = tournamentTitle)
+            Text(text = tournamentTitle.value)
         }
 
         LazyColumn(
@@ -220,11 +220,12 @@ fun CreateTournamentScreen(
 
     if (showChangeTitleDialog) {
         ChangeEventTitleDialog(
-            currentTitle = tournamentTitle,
+            currentTitle = tournamentTitle.value,
             onDismiss = { showChangeTitleDialog = false },
             onSave = { newTitle ->
-                onAdminEvent(AdminEvent.SetTournamentTitle(newTitle))
+                tournamentTitle.value = newTitle
                 showChangeTitleDialog = false
+                onAdminEvent(AdminEvent.SetTournamentTitle(newTitle))
             }
         )
     }

@@ -127,21 +127,24 @@ fun CreateTournamentDialog(
 
     val title by rememberUpdatedState(adminState.createTournamentTitle)
 
+    val titleState = remember { mutableStateOf(title) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Create New Tournament") },
         text = {
             OutlinedTextField(
-                value = title,
+                value = titleState.value,
                 onValueChange = {
-                    onAdminEvent(AdminEvent.SetTournamentTitle(it)) },
+                    titleState.value = it },
                 label = { Text("Tournament Title") }
             )
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onCreate(title)
+                    onCreate(titleState.value)
+                    onAdminEvent(AdminEvent.SetTournamentTitle(titleState.value))
                     onAdminEvent(AdminEvent.SaveTournamentToFirebase)
                     onDismiss()
                 }

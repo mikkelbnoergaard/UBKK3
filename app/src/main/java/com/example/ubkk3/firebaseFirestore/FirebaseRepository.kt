@@ -93,14 +93,14 @@ class FirebaseRepository(private val context: Context) {
     }
 
     fun saveTournamentToFirebase(tournament: Tournament) {
-        val tournamentData = mapOf(
-            "id" to tournament.id,
-            "tournamentName" to tournament.tournamentName,
-            "isActive" to tournament.isActive
-        )
+        // Generate a unique document ID
+        val documentId = database.collection("tournaments").document().id
 
-        val tournamentDoc = database.collection("tournaments").document(tournament.id)
-        tournamentDoc.set(tournamentData)
+        // Create a valid document reference
+        val documentReference = database.collection("tournaments").document(documentId)
+
+        // Save the tournament to Firestore
+        documentReference.set(tournament)
             .addOnSuccessListener {
                 Log.d("FirebaseRepository", "Tournament details saved successfully")
             }
@@ -108,7 +108,7 @@ class FirebaseRepository(private val context: Context) {
                 Log.e("FirebaseRepository", "Error saving tournament details", exception)
             }
 
-        val matchesCollection = tournamentDoc.collection("matches")
+        val matchesCollection = documentReference.collection("matches")
         tournament.matches.forEachIndexed { index, match ->
             val matchData = mapOf(
                 "id" to match.id,
