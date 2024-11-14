@@ -254,6 +254,25 @@ class FirebaseRepository(private val context: Context) {
         }
     }
 
+    suspend fun loadMatchDetails(tournamentId: String, matchId: String): MatchDetails? {
+    return try {
+        val matchDoc = database.collection("tournaments")
+            .document(tournamentId)
+            .collection("matches")
+            .document(matchId)
+            .get()
+            .await()
+
+        matchDoc.toObject(MatchDetails::class.java)?.copy(id = matchDoc.id)
+    } catch (e: Exception) {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+            Log.d("Error loading match details", e.message.toString())
+        }
+        null
+    }
+}
+
     suspend fun loadTournamentById(tournamentId: String): Tournament? {
         return try {
             val tournamentDoc = database.collection("tournaments").document(tournamentId).get().await()

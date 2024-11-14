@@ -23,7 +23,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -51,12 +51,11 @@ import kotlinx.coroutines.launch
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.ubkk3.ui.admin.AdminScreen
+import com.example.ubkk3.ui.admin.AdminScreenViewModel
 import com.example.ubkk3.ui.admin.CreateTournamentScreen
-import com.example.ubkk3.ui.admin.CreateTournamentViewModel
 import com.example.ubkk3.ui.tournament.MatchScreen
 import com.example.ubkk3.ui.tournament.TournamentScreen
 import com.example.ubkk3.ui.tournament.TournamentScreenViewModel
-import com.example.ubkk3.ui.tournament.Tournaments
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -82,11 +81,15 @@ class MainActivity : ComponentActivity() {
                 ) {
 
                     val navController = rememberNavController()
-                    val createTournamentViewModel = viewModel<CreateTournamentViewModel>()
+                    //val createTournamentViewModel = viewModel<CreateTournamentViewModel>()
                     val tournamentScreenViewModel = viewModel<TournamentScreenViewModel>()
-                    val tournaments = tournamentScreenViewModel.activeTournaments.collectAsStateWithLifecycle().value
-                    val tournamentState by tournamentScreenViewModel.tournamentState.collectAsState()
+                    //val tournaments = tournamentScreenViewModel.activeTournaments.collectAsStateWithLifecycle().value
+                    val tournamentState by tournamentScreenViewModel.tournamentState.collectAsStateWithLifecycle()
                     val onTournamentEvent = tournamentScreenViewModel::onEvent
+
+                    val adminScreenViewModel = viewModel<AdminScreenViewModel>()
+                    val adminState by adminScreenViewModel.adminState.collectAsStateWithLifecycle()
+                    val onAdminEvent = adminScreenViewModel::onEvent
 
 
                     NavHost(navController = navController, startDestination = "sign_in") {
@@ -215,6 +218,9 @@ class MainActivity : ComponentActivity() {
                                                             navController.navigate("sign_in")
                                                         }
                                                     },
+                                                    adminState = adminState,
+                                                    onAdminEvent = onAdminEvent,
+
                                                 )
                                             } else {
                                                 ProfileScreen(
@@ -269,7 +275,7 @@ class MainActivity : ComponentActivity() {
                             val userData = googleAuthUiClient.getSignedInUser()
                             val matchDetailsJson = backStackEntry.arguments?.getString("matchDetailsJson") ?: ""
                             val selectedTournamentJson = backStackEntry.arguments?.getString("selectedTournament") ?: ""
-                            MatchScreen(navController, Uri.decode(matchDetailsJson), userData, Uri.decode(selectedTournamentJson))
+                            MatchScreen(navController, Uri.decode(matchDetailsJson), userData, Uri.decode(selectedTournamentJson), tournamentState, onTournamentEvent)
                         }
                         composable(
                             "create_tournament/{title}",
@@ -278,7 +284,7 @@ class MainActivity : ComponentActivity() {
                             )
                         ) { backStackEntry ->
                             val title = backStackEntry.arguments?.getString("title") ?: ""
-                            CreateTournamentScreen(navController = navController, title = title)
+                            CreateTournamentScreen(navController = navController, title = title, onAdminEvent = onAdminEvent, adminState = adminState)
                         }
                     }
                 }

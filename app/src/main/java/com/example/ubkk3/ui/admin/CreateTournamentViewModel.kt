@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.util.concurrent.atomic.AtomicInteger
 
+/*
 class CreateTournamentViewModel(application: Application) : AndroidViewModel(application) {
     private val context: Context = application.applicationContext
     private val repository = FirebaseRepository(context)
@@ -103,4 +104,7 @@ class CreateTournamentViewModel(application: Application) : AndroidViewModel(app
         _teams.value = _teams.value + testTeams
         repository.saveTeams(_teams.value)
     }
-}
+
+ */
+
+

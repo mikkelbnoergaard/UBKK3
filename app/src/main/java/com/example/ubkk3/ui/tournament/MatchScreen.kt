@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -29,6 +30,8 @@ import com.example.ubkk3.R
 import com.example.ubkk3.firebaseSignIn.UserData
 import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
+import com.example.ubkk3.state.TournamentState
+import com.example.ubkk3.ui.event.TournamentEvent
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -38,18 +41,18 @@ fun MatchScreen(
     navController: NavController,
     matchDetailsJson: String,
     userData: UserData?,
-    selectedTournamentJson: String
+    selectedTournamentJson: String,
+    tournamentState: TournamentState,
+    onTournamentEvent: (TournamentEvent) -> Unit
 ) {
 
 
     val showDialog = remember { mutableStateOf(false) }
 
     val viewModel: TournamentScreenViewModel = viewModel()
-    val matchDetails = Json.decodeFromString<MatchDetails>(matchDetailsJson)
-    viewModel.loadMatchDetails(matchDetails)
-
-    val selectedTournament = Json.decodeFromString<Tournament>(selectedTournamentJson)
-    val currentMatchDetails by viewModel.matchDetails.collectAsState()
+    // val selectedTournament by rememberUpdatedState(tournamentState.selectedTournament)
+    val matchDetails by rememberUpdatedState(tournamentState.matchDetails)
+    val selectedTournament by rememberUpdatedState(tournamentState.selectedTournament)
 
     Column(
         modifier = Modifier
@@ -57,7 +60,7 @@ fun MatchScreen(
         verticalArrangement = Arrangement.Top
     ) {
         TopAppBar(
-            title = { Text(text = matchDetails.team1?.teamName + "   VS   " + matchDetails.team2?.teamName) },
+            title = { Text(text = matchDetails?.team1?.teamName + "   VS   " + matchDetails?.team2?.teamName) },
             navigationIcon = {
                 IconButton(onClick = {
                     navController.popBackStack()
@@ -81,33 +84,33 @@ fun MatchScreen(
             var team1color = Color.White
             var team2color = Color.White
 
-            if(matchDetails.team1Won == true) {
+            if(matchDetails?.team1Won == true) {
                 team1color = Color.Green
             }
-            if(matchDetails.team2Won == true) {
+            if(matchDetails?.team2Won == true) {
                 team2color = Color.Green
             }
             Column() {
-                matchDetails.team1?.teamName?.let { Text(text = it, color = team1color) }
-                matchDetails.team1?.member1?.name.let {
+                matchDetails?.team1?.teamName?.let { Text(text = it, color = team1color) }
+                matchDetails?.team1?.member1?.name.let {
                     if (it != null) {
                         Text(text = it, color = team1color)
                     }
                 }
-                matchDetails.team1?.member2?.name.let {
+                matchDetails?.team1?.member2?.name.let {
                     if (it != null) {
                         Text(text = it, color = team1color)
                     }
                 }
             }
             Column() {
-                matchDetails.team2?.teamName?.let { Text(text = it, color = team2color) }
-                matchDetails.team2?.member1?.name.let {
+                matchDetails?.team2?.teamName?.let { Text(text = it, color = team2color) }
+                matchDetails?.team2?.member1?.name.let {
                     if (it != null) {
                         Text(text = it, color = team2color)
                     }
                 }
-                matchDetails.team2?.member2?.name.let {
+                matchDetails?.team2?.member2?.name.let {
                     if (it != null) {
                         Text(text = it, color = team2color)
                     }
@@ -124,7 +127,7 @@ fun MatchScreen(
                     Text(text = "Edit Match")
                 }
             }
-            if(matchDetails.team1Won == false && matchDetails.team2Won == false) {
+            if(matchDetails?.team1Won == false && matchDetails?.team2Won == false) {
                 Button(
                     onClick = {
                         showDialog.value = true
@@ -141,12 +144,12 @@ fun MatchScreen(
             onSelectWinner = { whichTeamWon ->
                 selectedTournament?.let {
                     viewModel.viewModelScope.launch {
-                        viewModel.updateMatchWinner(it.id, matchDetails.id, whichTeamWon)
+                        matchDetails?.let { it1 -> onTournamentEvent(TournamentEvent.UpdateMatchWinner(it.id, it1.id, whichTeamWon)) }
                     }
                 }
                 showDialog.value = false
             },
-            match = currentMatchDetails ?: matchDetails,
+            match = matchDetails!!,
             navController = navController
         )
     }

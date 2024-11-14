@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -22,7 +21,7 @@ import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.TournamentState
 import com.example.ubkk3.ui.event.TournamentEvent
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -33,6 +32,8 @@ fun TournamentScreen(
     onTournamentEvent: (TournamentEvent) -> Unit
 ) {
 
+    val selectedTournament by rememberUpdatedState(tournamentState.selectedTournament)
+
     Column(
         verticalArrangement = Arrangement.Top
     ) {
@@ -40,18 +41,16 @@ fun TournamentScreen(
         TopBar(
             activeTournaments = tournamentState.activeTournaments,
             tournamentState,
-            onTournamentEvent
+            onTournamentEvent,
+            onSelectTournament = { onTournamentEvent(TournamentEvent.SelectTournament(it)) }
         )
-        tournamentState.selectedTournament?.let {
+
+        selectedTournament?.let {
             Tournaments(
                 navController = navController,
                 tournament = it,
-                zoomLevel = tournamentState.zoomLevel,
-                offsetX = tournamentState.offsetX,
-                offsetY = tournamentState.offsetY,
-                onZoomLevelChange = { onTournamentEvent(TournamentEvent.UpdateZoomLevel(it)) },
-                onOffsetXChange = { onTournamentEvent(TournamentEvent.UpdateOffsetX(it)) },
-                onOffsetYChange = { onTournamentEvent(TournamentEvent.UpdateOffsetY(it)) }
+                tournamentState = tournamentState,
+                onTournamentEvent = onTournamentEvent
             )
         }
     }
@@ -62,7 +61,8 @@ fun TournamentScreen(
 fun TopBar(
     activeTournaments: List<Tournament>,
     tournamentState: TournamentState,
-    onTournamentEvent: (TournamentEvent) -> Unit
+    onTournamentEvent: (TournamentEvent) -> Unit,
+    onSelectTournament: (Tournament) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -86,7 +86,8 @@ fun TopBar(
                         DropdownMenuItem(
                             text = { Text(tournament.tournamentName) },
                             onClick = {
-                                onTournamentEvent(TournamentEvent.SelectTournament(tournament.id))
+                                onTournamentEvent(TournamentEvent.SelectTournament(tournament))
+                                onSelectTournament(tournament)
                                 expanded = false
                             }
                         )
@@ -101,15 +102,9 @@ fun TopBar(
 fun Tournaments(
     navController: NavController,
     tournament: Tournament,
-    zoomLevel: Float,
-    offsetX: Float,
-    offsetY: Float,
-    onZoomLevelChange: (Float) -> Unit,
-    onOffsetXChange: (Float) -> Unit,
-    onOffsetYChange: (Float) -> Unit
+    tournamentState: TournamentState,
+    onTournamentEvent: (TournamentEvent) -> Unit
 ) {
-    val viewModel: TournamentScreenViewModel = viewModel()
-    val matchDetails by viewModel.matchDetails.collectAsState()
 
     val matches = tournament.matches
     if (matches.isEmpty()) {
@@ -120,9 +115,9 @@ fun Tournaments(
             Text(text = "No matches available in this tournament.")
         }
     } else {
-        var scale by remember { mutableStateOf(zoomLevel) }
-        var offsetXState by remember { mutableStateOf(offsetX) }
-        var offsetYState by remember { mutableStateOf(offsetY) }
+        var scale by remember { mutableStateOf(tournamentState.zoomLevel) }
+        var offsetXState by remember { mutableStateOf(tournamentState.offsetX) }
+        var offsetYState by remember { mutableStateOf(tournamentState.offsetY) }
 
         val groupCount = matches.groupBy { it.round }.size
         val matchCount = matches.size
@@ -144,9 +139,9 @@ fun Tournaments(
                         scale = (scale * zoom).coerceIn(minScale, maxScale)
                         offsetXState += pan.x
                         offsetYState += pan.y
-                        onZoomLevelChange(scale)
-                        onOffsetXChange(offsetXState)
-                        onOffsetYChange(offsetYState)
+                        onTournamentEvent(TournamentEvent.UpdateZoomLevel(scale))
+                        onTournamentEvent(TournamentEvent.UpdateOffsetX(offsetXState))
+                        onTournamentEvent(TournamentEvent.UpdateOffsetY(offsetYState))
                     }
                 }
         ) {
@@ -188,6 +183,7 @@ fun Tournaments(
                                         onClick = { matchDetails ->
                                             val matchDetailsJson = Json.encodeToString(matchDetails)
                                             val selectedTournament = Json.encodeToString(tournament)
+                                            onTournamentEvent(TournamentEvent.UpdateMatchDetails(match.id))
                                             navController.navigate("match/$matchDetailsJson/$selectedTournament")
                                         }
                                     )

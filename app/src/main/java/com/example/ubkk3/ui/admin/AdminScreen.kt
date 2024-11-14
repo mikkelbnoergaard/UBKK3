@@ -2,7 +2,6 @@ package com.example.ubkk3.ui.admin
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,34 +20,36 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ubkk3.firebaseSignIn.UserData
 import com.example.ubkk3.match.Tournament
+import com.example.ubkk3.state.AdminState
+import com.example.ubkk3.ui.event.AdminEvent
 
 @Composable
 fun AdminScreen(
     userData: UserData?,
     navController: NavController,
     onSignOut: () -> Unit,
+    adminState: AdminState,
+    onAdminEvent: (AdminEvent) -> Unit
 ) {
-    val viewModel = viewModel<AdminScreenViewModel>()
-    val tournaments by viewModel.tournaments.collectAsState()
+    val tournaments by rememberUpdatedState(adminState.tournaments)
+
     val showDialog = remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -97,7 +98,7 @@ fun AdminScreen(
 
         items(tournaments) { tournament ->
             TournamentListItem(tournament = tournament) { isActive ->
-                viewModel.updateTournamentStatus(tournament.id, isActive)
+                onAdminEvent(AdminEvent.UpdateTournamentStatus(tournament.id, isActive))
             }
         }
     }
@@ -108,7 +109,9 @@ fun AdminScreen(
             onCreate = { title ->
                 // Handle the creation of the tournament with the specified title
                 navController.navigate("create_tournament/$title")
-            }
+            },
+            adminState = adminState,
+            onAdminEvent = onAdminEvent
         )
     }
 }
@@ -117,26 +120,29 @@ fun AdminScreen(
 @Composable
 fun CreateTournamentDialog(
     onDismiss: () -> Unit,
-    onCreate: (String) -> Unit
+    onCreate: (String) -> Unit,
+    adminState: AdminState,
+    onAdminEvent: (AdminEvent) -> Unit,
 ) {
-    val viewModel: CreateTournamentViewModel = viewModel()
-    val titleState = remember { mutableStateOf("") }
+
+    val title by rememberUpdatedState(adminState.createTournamentTitle)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Create New Tournament") },
         text = {
             OutlinedTextField(
-                value = titleState.value,
-                onValueChange = { titleState.value = it },
+                value = title,
+                onValueChange = {
+                    onAdminEvent(AdminEvent.SetTournamentTitle(it)) },
                 label = { Text("Tournament Title") }
             )
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onCreate(titleState.value)
-                    viewModel.saveTournamentToFirebase(titleState.value)
+                    onCreate(title)
+                    onAdminEvent(AdminEvent.SaveTournamentToFirebase)
                     onDismiss()
                 }
             ) {

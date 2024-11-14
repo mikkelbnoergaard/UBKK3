@@ -32,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,6 +49,8 @@ import androidx.navigation.NavController
 import com.example.ubkk3.R
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
+import com.example.ubkk3.state.AdminState
+import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,19 +61,16 @@ import kotlinx.coroutines.withContext
 fun CreateTournamentScreen(
     navController: NavController,
     title: String,
-    viewModel: CreateTournamentViewModel = viewModel()
+    adminState: AdminState,
+    onAdminEvent: (AdminEvent) -> Unit
 ) {
-    val teams by viewModel.teams.collectAsState()
+    val teams by rememberUpdatedState(adminState.teams)
     var showDialog by rememberSaveable { mutableStateOf(false) }
-    val tournamentTitle by viewModel.tournamentTitle.collectAsState()
+    val tournamentTitle by rememberUpdatedState(adminState.createTournamentTitle)
     var currentTeam by rememberSaveable { mutableStateOf(TeamDetails("", "", Player("","",0,0,0), Player("","",0,0,0))) }
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var showConfirmCreateDialog by remember { mutableStateOf(false) }
     var showChangeTitleDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(title) {
-        viewModel.setTournamentTitle(title)
-    }
 
     Column(
         modifier = Modifier
@@ -172,7 +172,7 @@ fun CreateTournamentScreen(
         }
 
         Button(
-            onClick = { viewModel.addTestTeams() },
+            onClick = { onAdminEvent(AdminEvent.AddTestTeams) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp)
@@ -187,14 +187,14 @@ fun CreateTournamentScreen(
             onDismiss = { showDialog = false },
             onSave = { team ->
                 if (isEditing) {
-                    viewModel.updateTeam(team)
+                    onAdminEvent(AdminEvent.UpdateTeam(team))
                 } else {
-                    viewModel.addTeam(team)
+                    onAdminEvent(AdminEvent.AddTeam(team))
                 }
                 showDialog = false
             },
             onDelete = { team ->
-                viewModel.deleteTeam(team)
+                onAdminEvent(AdminEvent.DeleteTeam(team))
                 showDialog = false
             }
         )
@@ -205,10 +205,9 @@ fun CreateTournamentScreen(
             onConfirm = {
                 if (teams.isNotEmpty()) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        viewModel.generateMatches()
-                        viewModel.saveTournamentToFirebase(tournamentTitle)
+                        onAdminEvent(AdminEvent.GenerateMatches)
+                        onAdminEvent(AdminEvent.SaveTournamentToFirebase)
                         withContext(Dispatchers.Main) {
-                            viewModel.clearData()
                             navController.navigate("logged_in")
                         }
                     }
@@ -224,7 +223,7 @@ fun CreateTournamentScreen(
             currentTitle = tournamentTitle,
             onDismiss = { showChangeTitleDialog = false },
             onSave = { newTitle ->
-                viewModel.setTournamentTitle(newTitle)
+                onAdminEvent(AdminEvent.SetTournamentTitle(newTitle))
                 showChangeTitleDialog = false
             }
         )
