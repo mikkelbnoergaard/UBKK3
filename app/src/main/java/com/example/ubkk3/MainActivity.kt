@@ -89,7 +89,9 @@ class MainActivity : ComponentActivity() {
 
                     val adminScreenViewModel = viewModel<AdminScreenViewModel>()
                     val adminState by adminScreenViewModel.adminState.collectAsStateWithLifecycle()
+                    val createTournamentState by adminScreenViewModel.createTournamentState.collectAsStateWithLifecycle()
                     val onAdminEvent = adminScreenViewModel::onEvent
+
 
 
                     NavHost(navController = navController, startDestination = "sign_in") {
@@ -220,6 +222,7 @@ class MainActivity : ComponentActivity() {
                                                     },
                                                     adminState = adminState,
                                                     onAdminEvent = onAdminEvent,
+                                                    createTournamentState = createTournamentState
 
                                                 )
                                             } else {

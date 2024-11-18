@@ -5,16 +5,16 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ubkk3.generateTournament.generateTournament
+import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.repository.FirebaseRepository
 import com.example.ubkk3.state.AdminState
+import com.example.ubkk3.state.CreateTournamentState
 import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -27,20 +27,29 @@ class AdminScreenViewModel(application: Application) : AndroidViewModel(applicat
     private val repository = FirebaseRepository(context)
 
     private val _tournaments = MutableStateFlow<List<Tournament>>(emptyList())
-    private val _creatingTournamentPlayers = MutableStateFlow<List<Player>>(emptyList())
+    private val _createTournamentPlayers = MutableStateFlow<List<Player>>(emptyList())
     private val _teams = MutableStateFlow(repository.loadTeams())
-    private val _tournamentTitle = MutableStateFlow("")
+    private val _createTournamentTitle = MutableStateFlow("")
+    private val _createTournamentMatches = MutableStateFlow<List<MatchDetails>>(emptyList())
     private val idCounter = AtomicInteger(_teams.value.size)
 
+
     private val _adminState = MutableStateFlow(AdminState())
-    val adminState = combine(_adminState, _tournaments, _creatingTournamentPlayers, _teams, _tournamentTitle) { adminState, tournaments, creatingTournamentPlayers, teams, tournamentTitle ->
+    val adminState = combine(_adminState, _tournaments, _teams) { adminState, tournaments, teams ->
         adminState.copy(
             tournaments = tournaments,
-            creatingTournamentPlayers = creatingTournamentPlayers,
             teams = teams,
-            createTournamentTitle = tournamentTitle
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AdminState())
+
+    private val _createTournamentState = MutableStateFlow(CreateTournamentState())
+    val createTournamentState = combine(_createTournamentState, _createTournamentTitle, _createTournamentMatches, _createTournamentPlayers) { createTournamentState, createTournamentTitle, createTournamentMatches, createTournamentPlayers ->
+        createTournamentState.copy(
+            createTournamentTitle = createTournamentTitle,
+            createTournamentMatches = createTournamentMatches,
+            createTournamentPlayers = createTournamentPlayers,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CreateTournamentState())
 
     init {
         loadTournaments()
@@ -64,38 +73,35 @@ class AdminScreenViewModel(application: Application) : AndroidViewModel(applicat
                 deleteTeam(event.team)
             }
             is AdminEvent.SetTournamentTitle -> {
-                println("Tournament title before: " + adminState.value.createTournamentTitle)
-                _adminState.update {
-                    it.copy(
+                _createTournamentTitle.value = event.title
+                _createTournamentState.update { currentState ->
+                    currentState.copy(
                         createTournamentTitle = event.title
                     )
                 }
-                println("Tournament title set: " + event.title)
             }
             is AdminEvent.GenerateMatches -> {
-                _adminState.update {
+                _createTournamentMatches.value = generateTournament(_teams.value)
+                _createTournamentState.update {
                     it.copy(
-                        matches = generateTournament(_teams.value)
+                        createTournamentMatches = generateTournament(_teams.value)
                     )
                 }
             }
             is AdminEvent.SaveTournamentToFirebase -> {
                 val tournament = Tournament(
-                    id = adminState.value.createTournamentTitle,
-                    tournamentName = adminState.value.createTournamentTitle,
-                    matches = adminState.value.matches,
+                    tournamentName = createTournamentState.value.createTournamentTitle,
+                    matches = _createTournamentState.value.createTournamentMatches,
                     isActive = false
                 )
                 viewModelScope.launch {
                     repository.saveTournamentToFirebase(tournament)
-                    _tournamentTitle.value = ""
                 }
-                _adminState.update {
+                _createTournamentState.update {
                     it.copy(
                         createTournamentTitle = "",
-                        matches = emptyList(),
-                        creatingTournamentPlayers = emptyList(),
-                        teams = emptyList(),
+                        createTournamentMatches = emptyList(),
+                        createTournamentPlayers = emptyList(),
                     )
                 }
             }

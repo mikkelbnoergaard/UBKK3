@@ -93,14 +93,22 @@ class FirebaseRepository(private val context: Context) {
     }
 
     fun saveTournamentToFirebase(tournament: Tournament) {
+        println("THIS WAS CALLED!!")
+        println("tournament name: ${tournament.tournamentName}")
         // Generate a unique document ID
         val documentId = database.collection("tournaments").document().id
 
         // Create a valid document reference
         val documentReference = database.collection("tournaments").document(documentId)
 
+        val tournamentData = mapOf(
+            "id" to tournament.id,
+            "tournamentName" to tournament.tournamentName,
+            "isActive" to tournament.isActive
+        )
+
         // Save the tournament to Firestore
-        documentReference.set(tournament)
+        documentReference.set(tournamentData)
             .addOnSuccessListener {
                 Log.d("FirebaseRepository", "Tournament details saved successfully")
             }

@@ -38,6 +38,7 @@ import coil.compose.AsyncImage
 import com.example.ubkk3.firebaseSignIn.UserData
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.AdminState
+import com.example.ubkk3.state.CreateTournamentState
 import com.example.ubkk3.ui.event.AdminEvent
 
 @Composable
@@ -46,6 +47,7 @@ fun AdminScreen(
     navController: NavController,
     onSignOut: () -> Unit,
     adminState: AdminState,
+    createTournamentState: CreateTournamentState,
     onAdminEvent: (AdminEvent) -> Unit
 ) {
     val tournaments by rememberUpdatedState(adminState.tournaments)
@@ -111,7 +113,8 @@ fun AdminScreen(
                 navController.navigate("create_tournament/$title")
             },
             adminState = adminState,
-            onAdminEvent = onAdminEvent
+            onAdminEvent = onAdminEvent,
+            createTournamentState = createTournamentState
         )
     }
 }
@@ -122,10 +125,11 @@ fun CreateTournamentDialog(
     onDismiss: () -> Unit,
     onCreate: (String) -> Unit,
     adminState: AdminState,
+    createTournamentState: CreateTournamentState,
     onAdminEvent: (AdminEvent) -> Unit,
 ) {
 
-    val title by rememberUpdatedState(adminState.createTournamentTitle)
+    val title by rememberUpdatedState(createTournamentState.createTournamentTitle)
 
     val titleState = remember { mutableStateOf(title) }
 
@@ -143,9 +147,9 @@ fun CreateTournamentDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    onCreate(titleState.value)
                     onAdminEvent(AdminEvent.SetTournamentTitle(titleState.value))
-                    onAdminEvent(AdminEvent.SaveTournamentToFirebase)
+                    println("TITLE STATE: " + titleState.value)
+                    onCreate(titleState.value)
                     onDismiss()
                 }
             ) {

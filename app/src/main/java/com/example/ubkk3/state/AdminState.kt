@@ -7,8 +7,5 @@ import com.example.ubkk3.match.Tournament
 
 data class AdminState(
     val tournaments: List<Tournament> = emptyList(),
-    val creatingTournamentPlayers: List<Player> = emptyList(),
     val teams: List<TeamDetails> = emptyList(),
-    val createTournamentTitle: String = "",
-    val matches: List<MatchDetails> = emptyList(),
 )
