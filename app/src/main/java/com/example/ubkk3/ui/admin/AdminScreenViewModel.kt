@@ -9,9 +9,7 @@ import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
-import com.example.ubkk3.repository.FirebaseRepository
 import com.example.ubkk3.state.AdminState
-import com.example.ubkk3.state.CreateTournamentState
 import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,7 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
-
+/*
 class AdminScreenViewModel(application: Application) : AndroidViewModel(application) {
     private val context: Context = application.applicationContext
     private val repository = FirebaseRepository(context)
@@ -164,4 +162,7 @@ class AdminScreenViewModel(application: Application) : AndroidViewModel(applicat
     }
 
 
-}
+
+ */
+
+

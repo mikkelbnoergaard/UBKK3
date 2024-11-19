@@ -1,16 +1,34 @@
 package com.example.ubkk3.match
 
-import kotlinx.serialization.Serializable
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.example.ubkk3.Converters.Converters
 
-@Serializable
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = Tournament::class,
+        parentColumns = ["id"],
+        childColumns = ["tournamentId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index(value = ["tournamentId"])]
+)
+@TypeConverters(Converters::class)
 data class MatchDetails(
-    val id: String = "",
 
-    val team1: TeamDetails? = null,
-    val team1Won: Boolean? = false,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
 
-    val team2: TeamDetails? = null,
-    val team2Won: Boolean? = false,
+    val tournamentId: Int = 0,
 
-    val round: String? = null
+    val team1: TeamDetails,
+    val team1Won: Boolean,
+
+    val team2: TeamDetails,
+    val team2Won: Boolean,
+
+    val round: String
 )

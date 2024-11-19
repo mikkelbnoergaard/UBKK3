@@ -89,7 +89,9 @@ fun generateTournament(teams: List<TeamDetails>): List<MatchDetails> {
                     MatchDetails(
                         team1 = group[i],
                         team2 = group[j],
-                        round = "Group ${index + 1}"
+                        round = "Group ${index + 1}",
+                        team1Won = false,
+                        team2Won = false,
                     )
                 )
             }
@@ -103,10 +105,9 @@ fun generateRandomTeams(): List<TeamDetails> {
     val teamCount = (Random.nextInt(2, 9) * 4) // Generates a number between 8 and 32 that is divisible by 4
     return List(teamCount) { index ->
         TeamDetails(
-            id = (index + 1).toString(),
             teamName = "Team ${index + 1}",
-            member1 = Player(name = "Member 1", email = "Email1", cupsHit = 0, redemptions = 0, trickshots = 0),
-            member2 = Player(name = "Member 2", email = "Email2", cupsHit = 0, redemptions = 0, trickshots = 0)
+            player1 = Player(name = "Member 1", email = "Email1", cupsHit = 0, redemptions = 0, trickshots = 0),
+            player2 = Player(name = "Member 2", email = "Email2", cupsHit = 0, redemptions = 0, trickshots = 0)
         )
     }
 }

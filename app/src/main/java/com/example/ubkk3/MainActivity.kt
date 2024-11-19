@@ -1,7 +1,6 @@
 package com.example.ubkk3
 
 import GoogleAuthUiClient
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -9,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +23,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -34,31 +33,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.ubkk3.dataLayer.local.DatabaseModules
+import com.example.ubkk3.dataLayer.local.TournamentRepository
 import com.example.ubkk3.firebaseSignIn.SignInScreen
 import com.example.ubkk3.firebaseSignIn.SignInViewModel
 import com.example.ubkk3.navigation.TabItem
 import com.example.ubkk3.ui.Profile.ProfileScreen
+import com.example.ubkk3.ui.admin.AdminScreen
+import com.example.ubkk3.ui.admin.CreateTournamentScreen
 import com.example.ubkk3.ui.stats.Stats
 import com.example.ubkk3.ui.theme.UBKK3Theme
-import com.google.android.gms.auth.api.identity.Identity
-import kotlinx.coroutines.launch
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import com.example.ubkk3.ui.admin.AdminScreen
-import com.example.ubkk3.ui.admin.AdminScreenViewModel
-import com.example.ubkk3.ui.admin.CreateTournamentScreen
-import com.example.ubkk3.ui.tournament.MatchScreen
 import com.example.ubkk3.ui.tournament.TournamentScreen
-import com.example.ubkk3.ui.tournament.TournamentScreenViewModel
+import com.example.ubkk3.ui.viewModels.AdminScreenViewModel
+import com.example.ubkk3.ui.viewModels.TournamentScreenViewModel
+import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -68,6 +70,31 @@ class MainActivity : ComponentActivity() {
             oneTapClient = Identity.getSignInClient(applicationContext)
         )
     }
+
+    private val adminScreenViewModel by viewModels<AdminScreenViewModel>( // ViewModels to manage the state of the admin screen.
+        factoryProducer = {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return AdminScreenViewModel(
+                        TournamentRepository(DatabaseModules.provideDao(DatabaseModules.provideDataBase(applicationContext)))
+                    ) as T
+                }
+            }
+        }
+    )
+
+    private val tournamentScreenViewModel by viewModels<TournamentScreenViewModel>( // ViewModels to manage the state of the admin screen.
+        factoryProducer = {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return TournamentScreenViewModel(
+                        TournamentRepository(DatabaseModules.provideDao(DatabaseModules.provideDataBase(applicationContext)))
+                    ) as T
+                }
+            }
+        }
+    )
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,15 +108,11 @@ class MainActivity : ComponentActivity() {
                 ) {
 
                     val navController = rememberNavController()
-                    //val createTournamentViewModel = viewModel<CreateTournamentViewModel>()
-                    val tournamentScreenViewModel = viewModel<TournamentScreenViewModel>()
-                    //val tournaments = tournamentScreenViewModel.activeTournaments.collectAsStateWithLifecycle().value
+
                     val tournamentState by tournamentScreenViewModel.tournamentState.collectAsStateWithLifecycle()
                     val onTournamentEvent = tournamentScreenViewModel::onEvent
 
-                    val adminScreenViewModel = viewModel<AdminScreenViewModel>()
                     val adminState by adminScreenViewModel.adminState.collectAsStateWithLifecycle()
-                    val createTournamentState by adminScreenViewModel.createTournamentState.collectAsStateWithLifecycle()
                     val onAdminEvent = adminScreenViewModel::onEvent
 
 
@@ -221,9 +244,7 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                     },
                                                     adminState = adminState,
-                                                    onAdminEvent = onAdminEvent,
-                                                    createTournamentState = createTournamentState
-
+                                                    onAdminEvent = onAdminEvent
                                                 )
                                             } else {
                                                 ProfileScreen(
@@ -267,18 +288,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
-                        }
-                        composable(
-                            "match/{matchDetailsJson}/{selectedTournament}",
-                            arguments = listOf(
-                                navArgument("matchDetailsJson") { type = NavType.StringType },
-                                navArgument("selectedTournament") { type = NavType.StringType },
-                            )
-                        ) { backStackEntry ->
-                            val userData = googleAuthUiClient.getSignedInUser()
-                            val matchDetailsJson = backStackEntry.arguments?.getString("matchDetailsJson") ?: ""
-                            val selectedTournamentJson = backStackEntry.arguments?.getString("selectedTournament") ?: ""
-                            MatchScreen(navController, Uri.decode(matchDetailsJson), userData, Uri.decode(selectedTournamentJson), tournamentState, onTournamentEvent)
                         }
                         composable(
                             "create_tournament/{title}",

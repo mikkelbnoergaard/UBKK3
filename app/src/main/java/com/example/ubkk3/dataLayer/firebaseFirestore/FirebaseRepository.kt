@@ -11,14 +11,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
+/*
 class FirebaseRepository(private val context: Context) {
     private val database: FirebaseFirestore = FirebaseFirestore.getInstance()
     private val sharedPreferences = context.getSharedPreferences("tournament_prefs", Context.MODE_PRIVATE)
-
-    private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun loadMatchesFromTournament(title: String): List<MatchDetails> {
         return try {
@@ -482,4 +479,5 @@ class FirebaseRepository(private val context: Context) {
 
         return worstTeams
     }
-}
+
+ */

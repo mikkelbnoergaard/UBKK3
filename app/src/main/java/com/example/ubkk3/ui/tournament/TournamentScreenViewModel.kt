@@ -6,7 +6,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
-import com.example.ubkk3.repository.FirebaseRepository
 import com.example.ubkk3.state.TournamentState
 import com.example.ubkk3.ui.event.TournamentEvent
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +19,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-
+/*
 
 class TournamentScreenViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -104,4 +103,5 @@ class TournamentScreenViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-}
+ */
+

@@ -15,15 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.TournamentState
+import com.example.ubkk3.ui.admin.CreateTournamentDialog
 import com.example.ubkk3.ui.event.TournamentEvent
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 @Composable
 fun TournamentScreen(
@@ -42,7 +39,7 @@ fun TournamentScreen(
             activeTournaments = tournamentState.activeTournaments,
             tournamentState,
             onTournamentEvent,
-            onSelectTournament = { onTournamentEvent(TournamentEvent.SelectTournament(it)) }
+            onSelectTournament = { onTournamentEvent(TournamentEvent.SetSelectedTournament(it)) }
         )
 
         selectedTournament?.let {
@@ -86,7 +83,7 @@ fun TopBar(
                         DropdownMenuItem(
                             text = { Text(tournament.tournamentName) },
                             onClick = {
-                                onTournamentEvent(TournamentEvent.SelectTournament(tournament))
+                                onTournamentEvent(TournamentEvent.SetSelectedTournament(tournament))
                                 onSelectTournament(tournament)
                                 expanded = false
                             }
@@ -105,6 +102,10 @@ fun Tournaments(
     tournamentState: TournamentState,
     onTournamentEvent: (TournamentEvent) -> Unit
 ) {
+
+    val showMatchDialog = remember { mutableStateOf(false) }
+
+    val selectedMatch = remember { mutableStateOf<MatchDetails?>(null) }
 
     val matches = tournament.matches
     if (matches.isEmpty()) {
@@ -181,10 +182,10 @@ fun Tournaments(
                                     Match(
                                         matchDetails = match,
                                         onClick = { matchDetails ->
-                                            val matchDetailsJson = Json.encodeToString(matchDetails)
-                                            val selectedTournament = Json.encodeToString(tournament)
+                                            showMatchDialog.value = true
+                                            selectedMatch.value = matchDetails
                                             onTournamentEvent(TournamentEvent.UpdateMatchDetails(match.id))
-                                            navController.navigate("match/$matchDetailsJson/$selectedTournament")
+
                                         }
                                     )
                                 }
@@ -192,6 +193,18 @@ fun Tournaments(
                         }
                 }
             }
+        }
+    }
+    if (showMatchDialog.value) {
+        selectedMatch.value?.let {
+            MatchDialog(
+                onDismiss = { showMatchDialog.value = false },
+                navController = navController,
+                selectedMatch = it,
+                selectedTournament = tournament,
+                userData = null,
+                onTournamentEvent = onTournamentEvent
+            )
         }
     }
 }
@@ -229,7 +242,7 @@ fun Match(
                         color = team1Color
                     )
                 }
-                matchDetails.team1?.member1?.name.let {
+                matchDetails.team1?.player1?.name.let {
                     if (it != null) {
                         Text(
                             text = it,
@@ -237,7 +250,7 @@ fun Match(
                         )
                     }
                 }
-                matchDetails.team1?.member2?.name.let {
+                matchDetails.team1?.player2?.name.let {
                     if (it != null) {
                         Text(
                             text = it,
@@ -260,7 +273,7 @@ fun Match(
                         )
                     }
                 }
-                matchDetails.team2?.member1?.name.let {
+                matchDetails.team2?.player1?.name.let {
                     if (it != null) {
                         Text(
                             text = it,
@@ -268,7 +281,7 @@ fun Match(
                         )
                     }
                 }
-                matchDetails.team2?.member2?.name.let {
+                matchDetails.team2?.player2?.name.let {
                     if (it != null) {
                         Text(
                             text = it,

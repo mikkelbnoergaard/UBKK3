@@ -27,14 +27,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,11 +40,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ubkk3.R
+import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
+import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.AdminState
 import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.CoroutineScope
@@ -64,10 +61,10 @@ fun CreateTournamentScreen(
     adminState: AdminState,
     onAdminEvent: (AdminEvent) -> Unit
 ) {
-    val teams by rememberUpdatedState(adminState.teams)
+    val teams by rememberUpdatedState(adminState.createTournamentTeams)
     var showDialog by rememberSaveable { mutableStateOf(false) }
     val tournamentTitle = remember { mutableStateOf(title) }
-    var currentTeam by rememberSaveable { mutableStateOf(TeamDetails("", "", Player("","",0,0,0), Player("","",0,0,0))) }
+    var currentTeam by rememberSaveable { mutableStateOf<TeamDetails?>(null) }
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var showConfirmCreateDialog by remember { mutableStateOf(false) }
     var showChangeTitleDialog by remember { mutableStateOf(false) }
@@ -139,12 +136,12 @@ fun CreateTournamentScreen(
                             Row(
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                team.member1?.let { Text(text = it.name) }
+                                team.player1?.let { Text(text = it.name) }
                             }
                             Row(
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                team.member2?.let { Text(text = it.name) }
+                                team.player2?.let { Text(text = it.name) }
                             }
                         }
                     }
@@ -182,22 +179,24 @@ fun CreateTournamentScreen(
     }
 
     if (showDialog) {
-        TeamDialog(
-            team = currentTeam,
-            onDismiss = { showDialog = false },
-            onSave = { team ->
-                if (isEditing) {
-                    onAdminEvent(AdminEvent.UpdateTeam(team))
-                } else {
-                    onAdminEvent(AdminEvent.AddTeam(team))
+        currentTeam?.let {
+            TeamDialog(
+                team = it,
+                onDismiss = { showDialog = false },
+                onSave = { team ->
+                    if (isEditing) {
+                        onAdminEvent(AdminEvent.UpdateTeam(team))
+                    } else {
+                        onAdminEvent(AdminEvent.AddTeam(team))
+                    }
+                    showDialog = false
+                },
+                onDelete = { team ->
+                    onAdminEvent(AdminEvent.DeleteTeam(team))
+                    showDialog = false
                 }
-                showDialog = false
-            },
-            onDelete = { team ->
-                onAdminEvent(AdminEvent.DeleteTeam(team))
-                showDialog = false
-            }
-        )
+            )
+        }
     }
 
     if (showConfirmCreateDialog) {
@@ -206,7 +205,12 @@ fun CreateTournamentScreen(
                 if (teams.isNotEmpty()) {
                     CoroutineScope(Dispatchers.IO).launch {
                         onAdminEvent(AdminEvent.GenerateMatches)
-                        onAdminEvent(AdminEvent.SaveTournamentToFirebase)
+                        val tournament = Tournament(
+                            tournamentName = adminState.createTournamentName,
+                            matches = adminState.createTournamentMatches,
+                            isActive = true
+                        )
+                        onAdminEvent(AdminEvent.SaveTournamentInDatabase)
                         withContext(Dispatchers.Main) {
                             navController.navigate("logged_in")
                         }
@@ -263,10 +267,10 @@ fun TeamDialog(
 ) {
     var teamName by remember { mutableStateOf(team.teamName) }
 
-    var member1Name by remember { mutableStateOf(team.member1?.name.toString()) }
-    var member1Email by remember { mutableStateOf(team.member1?.email.toString()) }
-    var member2Name by remember { mutableStateOf(team.member2?.name.toString()) }
-    var member2Email by remember { mutableStateOf(team.member2?.email.toString())}
+    var member1Name by remember { mutableStateOf(team.player1?.name.toString()) }
+    var member1Email by remember { mutableStateOf(team.player1?.email.toString()) }
+    var member2Name by remember { mutableStateOf(team.player2?.name.toString()) }
+    var member2Email by remember { mutableStateOf(team.player2?.email.toString())}
 
     var showConfirmDeleteDialog by remember { mutableStateOf(false) }
 
@@ -339,14 +343,14 @@ fun TeamDialog(
                                 TeamDetails(
                                     id = team.id,
                                     teamName = teamName,
-                                    member1 = Player(
+                                    player1 = Player(
                                         name = member1Name,
                                         email = member1Email,
                                         cupsHit = 0,
                                         redemptions = 0,
                                         trickshots = 0
                                     ),
-                                    member2 = Player(
+                                    player2 = Player(
                                         name = member2Name,
                                         email = member2Email,
                                         cupsHit = 0,

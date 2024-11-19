@@ -5,12 +5,11 @@ import com.example.ubkk3.match.Tournament
 
 sealed interface AdminEvent {
 
-    object LoadTournaments: AdminEvent
+    object SaveTournamentInDatabase: AdminEvent
     object GenerateMatches: AdminEvent
-    object SaveTournamentToFirebase: AdminEvent
     object AddTestTeams: AdminEvent
 
-    data class UpdateTournamentStatus(val tournamentName: String, val isActive: Boolean): AdminEvent
+    data class UpdateTournamentActivityStatus(val tournament: Tournament): AdminEvent
     data class AddTeam(val team: TeamDetails): AdminEvent
     data class UpdateTeam(val updatedTeam: TeamDetails): AdminEvent
     data class DeleteTeam(val team: TeamDetails): AdminEvent

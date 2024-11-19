@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -38,7 +39,6 @@ import coil.compose.AsyncImage
 import com.example.ubkk3.firebaseSignIn.UserData
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.AdminState
-import com.example.ubkk3.state.CreateTournamentState
 import com.example.ubkk3.ui.event.AdminEvent
 
 @Composable
@@ -47,7 +47,6 @@ fun AdminScreen(
     navController: NavController,
     onSignOut: () -> Unit,
     adminState: AdminState,
-    createTournamentState: CreateTournamentState,
     onAdminEvent: (AdminEvent) -> Unit
 ) {
     val tournaments by rememberUpdatedState(adminState.tournaments)
@@ -99,8 +98,8 @@ fun AdminScreen(
         }
 
         items(tournaments) { tournament ->
-            TournamentListItem(tournament = tournament) { isActive ->
-                onAdminEvent(AdminEvent.UpdateTournamentStatus(tournament.id, isActive))
+            TournamentListItem(tournament = tournament) {
+                onAdminEvent(AdminEvent.UpdateTournamentActivityStatus(tournament))
             }
         }
     }
@@ -113,8 +112,7 @@ fun AdminScreen(
                 navController.navigate("create_tournament/$title")
             },
             adminState = adminState,
-            onAdminEvent = onAdminEvent,
-            createTournamentState = createTournamentState
+            onAdminEvent = onAdminEvent
         )
     }
 }
@@ -125,31 +123,25 @@ fun CreateTournamentDialog(
     onDismiss: () -> Unit,
     onCreate: (String) -> Unit,
     adminState: AdminState,
-    createTournamentState: CreateTournamentState,
     onAdminEvent: (AdminEvent) -> Unit,
 ) {
-
-    val title by rememberUpdatedState(createTournamentState.createTournamentTitle)
-
-    val titleState = remember { mutableStateOf(title) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Create New Tournament") },
         text = {
             OutlinedTextField(
-                value = titleState.value,
+                value = adminState.createTournamentName,
                 onValueChange = {
-                    titleState.value = it },
+                    onAdminEvent(AdminEvent.SetTournamentTitle(it))
+                                },
                 label = { Text("Tournament Title") }
             )
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onAdminEvent(AdminEvent.SetTournamentTitle(titleState.value))
-                    println("TITLE STATE: " + titleState.value)
-                    onCreate(titleState.value)
+                    onCreate(adminState.createTournamentName)
                     onDismiss()
                 }
             ) {
