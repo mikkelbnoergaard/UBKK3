@@ -1,6 +1,5 @@
 package com.example.ubkk3.dataLayer.local
 
-import TournamentDatabase
 import android.content.Context
 import androidx.room.Room
 import dagger.Module
@@ -16,14 +15,23 @@ object DatabaseModules {
 
     @Singleton
     @Provides
-    fun provideDataBase(@ApplicationContext context: Context): TournamentDatabase {
+    fun provideDataBase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
             context.applicationContext,
-            TournamentDatabase::class.java,
+            AppDatabase::class.java,
             "tournament.db"
         ).build()
     }
 
     @Provides
-    fun provideDao(tournamentDatabase: TournamentDatabase): TournamentDao = tournamentDatabase.tournamentDao
+    fun provideTournamentDao(tournamentDatabase: AppDatabase): TournamentDao = tournamentDatabase.tournamentDao()
+
+    @Provides
+    fun provideMatchDetailsDao(tournamentDatabase: AppDatabase): MatchDetailsDao = tournamentDatabase.matchDetailsDao()
+
+    @Provides
+    fun provideTeamDetailsDao(tournamentDatabase: AppDatabase): TeamDetailsDao = tournamentDatabase.teamDetailsDao()
+
+    @Provides
+    fun providePlayerDao(tournamentDatabase: AppDatabase): PlayerDao = tournamentDatabase.playerDao()
 }

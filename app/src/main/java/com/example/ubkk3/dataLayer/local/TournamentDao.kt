@@ -21,14 +21,14 @@ interface TournamentDao {
     fun observeAll(): Flow<List<Tournament>>
 
     @Query("SELECT * FROM tournament WHERE id = :tournamentId")
-    fun getTournamentById(tournamentId: Int): Tournament
+    fun getTournamentById(tournamentId: Int): Flow<Tournament>
 
     @Query("UPDATE tournament SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE tournamentName = :tournamentName")
-    fun updateTournamentActivityStatus(tournamentName: String)
+    suspend fun updateTournamentActivityStatus(tournamentName: String)
 
     @Query("UPDATE matchdetails SET team1Won = 1 WHERE tournamentId = :tournamentId AND id = :matchId")
-    fun updateMatchWinnerToTeam1(tournamentId: Int, matchId: Int)
+    suspend fun updateMatchWinnerToTeam1(tournamentId: Int, matchId: Int)
 
     @Query("UPDATE matchdetails SET team2Won = 1 WHERE tournamentId = :tournamentId AND id = :matchId")
-    fun updateMatchWinnerToTeam2(tournamentId: Int, matchId: Int)
+    suspend fun updateMatchWinnerToTeam2(tournamentId: Int, matchId: Int)
 }

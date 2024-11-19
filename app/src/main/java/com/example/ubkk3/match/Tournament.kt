@@ -13,6 +13,5 @@ data class Tournament(
     val id: Int = 0,
 
     val tournamentName: String,
-    val matches: List<MatchDetails>,
     val isActive: Boolean = false
 )

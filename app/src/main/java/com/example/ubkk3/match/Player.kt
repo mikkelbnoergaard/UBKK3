@@ -8,17 +8,13 @@ import androidx.room.TypeConverters
 import com.example.ubkk3.Converters.Converters
 
 @Entity(
-    foreignKeys = [ForeignKey(
-        entity = Tournament::class,
-        parentColumns = ["id"],
-        childColumns = ["teamId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index(value = ["teamId"])]
+    tableName = "player",
+    foreignKeys = [
+        ForeignKey(entity = TeamDetails::class, parentColumns = ["id"], childColumns = ["teamId"])
+    ]
 )
 @TypeConverters(Converters::class)
 data class Player(
-
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 

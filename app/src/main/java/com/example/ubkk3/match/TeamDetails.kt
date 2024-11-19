@@ -7,18 +7,9 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.ubkk3.Converters.Converters
 
-@Entity(
-    foreignKeys = [ForeignKey(
-        entity = MatchDetails::class,
-        parentColumns = ["id"],
-        childColumns = ["matchId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index(value = ["matchId"])]
-)
+@Entity(tableName = "teamdetails")
 @TypeConverters(Converters::class)
 data class TeamDetails(
-
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 

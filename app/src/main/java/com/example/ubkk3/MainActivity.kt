@@ -71,24 +71,36 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private val adminScreenViewModel by viewModels<AdminScreenViewModel>( // ViewModels to manage the state of the admin screen.
+    private val adminScreenViewModel by viewModels<AdminScreenViewModel>(
         factoryProducer = {
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val database = DatabaseModules.provideDataBase(applicationContext)
                     return AdminScreenViewModel(
-                        TournamentRepository(DatabaseModules.provideDao(DatabaseModules.provideDataBase(applicationContext)))
+                        TournamentRepository(
+                            database.tournamentDao(),
+                            database.matchDetailsDao(),
+                            database.teamDetailsDao(),
+                            database.playerDao()
+                        )
                     ) as T
                 }
             }
         }
     )
 
-    private val tournamentScreenViewModel by viewModels<TournamentScreenViewModel>( // ViewModels to manage the state of the admin screen.
+    private val tournamentScreenViewModel by viewModels<TournamentScreenViewModel>(
         factoryProducer = {
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val database = DatabaseModules.provideDataBase(applicationContext)
                     return TournamentScreenViewModel(
-                        TournamentRepository(DatabaseModules.provideDao(DatabaseModules.provideDataBase(applicationContext)))
+                        TournamentRepository(
+                            database.tournamentDao(),
+                            database.matchDetailsDao(),
+                            database.teamDetailsDao(),
+                            database.playerDao()
+                        )
                     ) as T
                 }
             }

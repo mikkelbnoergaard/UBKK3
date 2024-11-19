@@ -13,6 +13,7 @@ import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.TournamentState
 import com.example.ubkk3.ui.event.TournamentEvent
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -21,7 +22,7 @@ class TournamentScreenViewModel(
 ): ViewModel() {
 
     private val _activeTournaments = MutableStateFlow(repository.observeAll())
-    private val _selectedTournament = MutableStateFlow(repository.getTournamentById(0))
+    private val _selectedTournament = MutableStateFlow<Tournament?>(null)
 
     private val _tournamentState = MutableStateFlow(TournamentState())
     val tournamentState = combine(_tournamentState, _activeTournaments, _selectedTournament) { tournamentState, activeTournaments, selectedTournament ->
@@ -30,6 +31,10 @@ class TournamentScreenViewModel(
             selectedTournament = selectedTournament
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TournamentState())
+
+    init {
+        onEvent(TournamentEvent.FetchTournaments)
+    }
 
     fun onEvent(event: TournamentEvent) {
         when (event) {
@@ -41,7 +46,7 @@ class TournamentScreenViewModel(
 
             is TournamentEvent.SetSelectedTournament -> {
                 viewModelScope.launch {
-                    _selectedTournament.value = repository.getTournamentById(event.tournament.id)
+                    _selectedTournament.value = repository.getTournamentById(event.tournament.id).first()
                 }
             }
 

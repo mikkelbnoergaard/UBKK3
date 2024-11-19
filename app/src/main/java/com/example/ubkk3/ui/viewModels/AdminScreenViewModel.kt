@@ -11,8 +11,10 @@ import com.example.ubkk3.generateTournament.generateTournament
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
+import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -34,7 +36,6 @@ class AdminScreenViewModel(
             is AdminEvent.SaveTournamentInDatabase -> {
                 val tournamentObject = Tournament(
                     tournamentName = adminState.value.createTournamentName,
-                    matches = adminState.value.createTournamentMatches,
                     isActive = true,
                 )
 
@@ -45,6 +46,21 @@ class AdminScreenViewModel(
 
                 viewModelScope.launch {
                     repository.createTournament(tournamentObject)
+                    val tournamentId = repository.getTournamentById(tournamentObject.id).firstOrNull()?.id ?: return@launch
+
+                    adminState.value.createTournamentTeams.forEach { team ->
+                        val teamDetails = team.copy(tournamentId = tournamentId)
+                        repository.insertTeamDetails(teamDetails)
+                        val teamId = repository.getTeamsByTournamentId(tournamentId).first { it.teamName == team.teamName }.id
+                        team.players.forEach { player ->
+                            repository.insertPlayer(player.copy(teamId = teamId))
+                        }
+                    }
+
+                    adminState.value.createTournamentMatches.forEach { match ->
+                        val matchDetails = match.copy(tournamentId = tournamentId)
+                        repository.insertMatchDetails(matchDetails)
+                    }
                 }
 
                 _adminState.update { it.copy(
@@ -80,10 +96,10 @@ class AdminScreenViewModel(
             is AdminEvent.AddTestTeams -> {
 
                 val testTeams = listOf(
-                    TeamDetails(teamName = "Team A", player1 = Player(name = "Player 1A", email = "Player@1A"), player2 = Player(name = "Player 2A", email = "Player@2A")),
-                    TeamDetails(teamName = "Team B", player1 = Player(name = "Player 1B", email = "Player@1B"), player2 = Player(name = "Player 2B", email = "Player@2B")),
-                    TeamDetails(teamName = "Team C", player1 = Player(name = "Player 1C", email = "Player@1C"), player2 = Player(name = "Player 2C", email = "Player@2C")),
-                    TeamDetails(teamName = "Team D", player1 = Player(name = "Player 1D", email = "Player@1D"), player2 = Player(name = "Player 2D", email = "Player@2D"))
+                    TeamDetails(tournamentId = 0, teamName = "Team A"),
+                    TeamDetails(tournamentId = 0, teamName = "Team B"),
+                    TeamDetails(tournamentId = 0, teamName = "Team C"),
+                    TeamDetails(tournamentId = 0, teamName = "Team D")
                 )
 
                 _adminState.update { it.copy(

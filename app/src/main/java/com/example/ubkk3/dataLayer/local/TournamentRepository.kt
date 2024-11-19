@@ -1,38 +1,63 @@
 package com.example.ubkk3.dataLayer.local
 
+import com.example.ubkk3.match.MatchDetails
+import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class TournamentRepository @Inject constructor(
-    private val dataSource: TournamentDao
+    private val tournamentDao: TournamentDao,
+    private val matchDetailsDao: MatchDetailsDao,
+    private val teamDetailsDao: TeamDetailsDao,
+    private val playerDao: PlayerDao
 ){
     suspend fun createTournament(tournament: Tournament) {
-        dataSource.createTournament(tournament)
+        tournamentDao.createTournament(tournament)
     }
 
     suspend fun deleteTournament(tournament: Tournament) {
-        dataSource.deleteTournament(tournament)
+        tournamentDao.deleteTournament(tournament)
     }
 
     fun observeAll(): Flow<List<Tournament>> {
-        return dataSource.observeAll()
+        return tournamentDao.observeAll()
     }
 
-    fun getTournamentById(tournamentId: Int): Tournament {
-        return dataSource.getTournamentById(tournamentId)
+    fun getTournamentById(tournamentId: Int): Flow<Tournament> {
+        return tournamentDao.getTournamentById(tournamentId)
+    }
+
+    suspend fun getTeamsByTournamentId(tournamentId: Int): List<TeamDetails> {
+        return teamDetailsDao.getTeamsByTournamentId(tournamentId)
+    }
+
+    suspend fun getMatchesByTournamentId(tournamentId: Int): List<MatchDetails> {
+        return matchDetailsDao.getMatchesByTournamentId(tournamentId)
     }
 
     suspend fun updateTournamentActivityStatus(tournament: Tournament) {
-        dataSource.updateTournamentActivityStatus(tournament.tournamentName)
+        tournamentDao.updateTournamentActivityStatus(tournament.tournamentName)
     }
 
     suspend fun updateMatchWinner(tournamentId: Int, matchId: Int, winningTeam: Int) {
         if (winningTeam == 1) {
-            dataSource.updateMatchWinnerToTeam1(tournamentId, matchId)
+            tournamentDao.updateMatchWinnerToTeam1(tournamentId, matchId)
         } else {
-            dataSource.updateMatchWinnerToTeam2(tournamentId, matchId)
+            tournamentDao.updateMatchWinnerToTeam2(tournamentId, matchId)
         }
+    }
+
+    suspend fun insertTeamDetails(teamDetails: TeamDetails) {
+        teamDetailsDao.insert(teamDetails)
+    }
+
+    suspend fun insertMatchDetails(matchDetails: MatchDetails) {
+        matchDetailsDao.insert(matchDetails)
+    }
+
+    suspend fun insertPlayer(player: Player) {
+        playerDao.insert(player)
     }
 }
