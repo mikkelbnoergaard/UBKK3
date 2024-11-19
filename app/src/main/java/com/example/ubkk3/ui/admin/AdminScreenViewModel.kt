@@ -90,9 +90,9 @@ class AdminScreenViewModel(application: Application) : AndroidViewModel(applicat
             }
             is AdminEvent.SaveTournamentToFirebase -> {
                 val tournament = Tournament(
-                    tournamentName = createTournamentState.value.createTournamentTitle,
+                    tournamentName = _createTournamentState.value.createTournamentTitle,
                     matches = _createTournamentState.value.createTournamentMatches,
-                    isActive = false
+                    isActive = true
                 )
                 viewModelScope.launch {
                     repository.saveTournamentToFirebase(tournament)
@@ -104,6 +104,7 @@ class AdminScreenViewModel(application: Application) : AndroidViewModel(applicat
                         createTournamentPlayers = emptyList(),
                     )
                 }
+                loadTournaments()
             }
             is AdminEvent.AddTestTeams -> {
                 addTestTeams()
