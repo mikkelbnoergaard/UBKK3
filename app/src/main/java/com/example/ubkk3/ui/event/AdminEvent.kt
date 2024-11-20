@@ -10,6 +10,8 @@ sealed interface AdminEvent {
     object GenerateMatches: AdminEvent
     object AddTestTeams: AdminEvent
 
+    data class AddPlayer(val player: Player): AdminEvent
+    data class UpdatePlayer(val player: Player): AdminEvent
     data class SaveTournamentInDatabase(val tournament: Tournament, val matches: List<MatchDetails>, val teams: List<TeamDetails>, val players: List<Player>): AdminEvent
     data class UpdateTournamentActivityStatus(val tournament: Tournament): AdminEvent
     data class AddTeam(val team: TeamDetails): AdminEvent

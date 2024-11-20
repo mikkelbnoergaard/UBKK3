@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.ubkk3.Converters.Converters
 
-@Entity
+@Entity(tableName = "tournament")
 @TypeConverters(Converters::class)
 data class Tournament(
 

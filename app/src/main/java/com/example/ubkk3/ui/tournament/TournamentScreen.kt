@@ -17,9 +17,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ubkk3.match.MatchDetails
+import com.example.ubkk3.match.Player
+import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.TournamentState
-import com.example.ubkk3.ui.admin.CreateTournamentDialog
 import com.example.ubkk3.ui.event.TournamentEvent
 
 @Composable
@@ -102,12 +103,10 @@ fun Tournaments(
     tournamentState: TournamentState,
     onTournamentEvent: (TournamentEvent) -> Unit
 ) {
-
     val showMatchDialog = remember { mutableStateOf(false) }
-
     val selectedMatch = remember { mutableStateOf<MatchDetails?>(null) }
+    val matches = tournamentState.selectedTournamentMatches
 
-    val matches = tournament.matches
     if (matches.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -123,13 +122,11 @@ fun Tournaments(
         val groupCount = matches.groupBy { it.round }.size
         val matchCount = matches.size
         val canvasWidth = (groupCount * 325).dp
-
         val canvasHeight = if (groupCount == 0) {
             400.dp
         } else {
             (matchCount * 150 / groupCount).dp
         }
-
         val minScale = 0.2f
         val maxScale = 1f
 
@@ -166,45 +163,50 @@ fun Tournaments(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    matches.filter { it.round!!.startsWith("Group") }.groupBy { it.round }
-                        .forEach { (round, groupMatches) ->
-                            Column(
-                                modifier = Modifier
-                                    .width(300.dp)
-                                    .padding(8.dp),
-                                verticalArrangement = Arrangement.SpaceEvenly,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                if (round != null) {
-                                    Text(text = round, modifier = Modifier.padding(8.dp))
-                                }
-                                groupMatches.forEach { match ->
-                                    Match(
-                                        matchDetails = match,
-                                        onClick = { matchDetails ->
-                                            showMatchDialog.value = true
-                                            selectedMatch.value = matchDetails
-                                            onTournamentEvent(TournamentEvent.UpdateMatchDetails(match.id))
+                    matches.filter { it.round!!.startsWith("Group") }.groupBy { it.round }.forEach { (round, roundMatches) ->
+                        Column {
+                            Text(text = round ?: "")
+                            roundMatches.forEach { matchDetails ->
+                                val team1 = tournamentState.selectedTournamentTeams[matchDetails.team1Id]?.firstOrNull()
+                                val team2 = tournamentState.selectedTournamentTeams[matchDetails.team2Id]?.firstOrNull()
 
+                                if (team1 != null && team2 != null) {
+                                    Match(
+                                        matchDetails = matchDetails,
+                                        team1 = team1,
+                                        team2 = team2,
+                                        players = tournamentState.selectedTournamentPlayers,
+                                        onClick = {
+                                            selectedMatch.value = matchDetails
+                                            onTournamentEvent(TournamentEvent.UpdateMatchDetails(matchDetails.id))
+                                            showMatchDialog.value = true
                                         }
                                     )
                                 }
                             }
                         }
+                    }
                 }
             }
         }
     }
     if (showMatchDialog.value) {
-        selectedMatch.value?.let {
-            MatchDialog(
-                onDismiss = { showMatchDialog.value = false },
-                navController = navController,
-                selectedMatch = it,
-                selectedTournament = tournament,
-                userData = null,
-                onTournamentEvent = onTournamentEvent
-            )
+        selectedMatch.value?.let { matchDetails ->
+            val team1 = tournamentState.selectedTournamentTeams[matchDetails.team1Id]?.firstOrNull()
+            val team2 = tournamentState.selectedTournamentTeams[matchDetails.team2Id]?.firstOrNull()
+            if (team1 != null && team2 != null) {
+                MatchDialog(
+                    onDismiss = { showMatchDialog.value = false },
+                    navController = navController,
+                    selectedMatch = matchDetails,
+                    selectedTournament = tournament,
+                    team1 = team1,
+                    team2 = team2,
+                    players = tournamentState.selectedTournamentPlayers,
+                    userData = null,
+                    onTournamentEvent = onTournamentEvent
+                )
+            }
         }
     }
 }
@@ -212,6 +214,9 @@ fun Tournaments(
 @Composable
 fun Match(
     matchDetails: MatchDetails,
+    team1: TeamDetails,
+    team2: TeamDetails,
+    players: Map<Int, List<Player>>,
     modifier: Modifier = Modifier,
     onClick: (MatchDetails) -> Unit
 ) {
@@ -231,65 +236,41 @@ fun Match(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val team1Color = if (matchDetails.team1Won == true) Color.Green else Color.White
-                matchDetails.team1?.teamName?.let {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val team1Color = if (matchDetails.team1Won == true) Color.Green else Color.White
                     Text(
-                        text = it,
+                        text = team1.teamName,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = team1Color
                     )
-                }
-                matchDetails.team1?.player1?.name.let {
-                    if (it != null) {
+                    players[team1.id]?.forEach { player ->
                         Text(
-                            text = it,
+                            text = player.name,
                             color = team1Color
                         )
                     }
-                }
-                matchDetails.team1?.player2?.name.let {
-                    if (it != null) {
-                        Text(
-                            text = it,
-                            color = team1Color
-                        )
-                    }
-                }
+
             }
             Text(text = "VS", modifier = Modifier.align(Alignment.CenterVertically))
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val team2Color = if (matchDetails.team2Won == true) Color.Green else Color.White
-                matchDetails.team2?.teamName.let {
-                    if (it != null) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val team2Color = if (matchDetails.team2Won == true) Color.Green else Color.White
+                    Text(
+                        text = team2.teamName,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = team2Color
+                    )
+                    players[team2.id]?.forEach { player ->
                         Text(
-                            text = it,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            text = player.name,
                             color = team2Color
                         )
                     }
                 }
-                matchDetails.team2?.player1?.name.let {
-                    if (it != null) {
-                        Text(
-                            text = it,
-                            color = team2Color
-                        )
-                    }
-                }
-                matchDetails.team2?.player2?.name.let {
-                    if (it != null) {
-                        Text(
-                            text = it,
-                            color = team2Color
-                        )
-                    }
-                }
-            }
+
         }
     }
 }

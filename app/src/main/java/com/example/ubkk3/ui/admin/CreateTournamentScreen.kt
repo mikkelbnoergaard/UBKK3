@@ -133,15 +133,9 @@ fun CreateTournamentScreen(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                team.player1?.let { Text(text = it.name) }
-                            }
-                            Row(
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                team.player2?.let { Text(text = it.name) }
+                            val players = adminState.createTournamentPlayers.filter { it.teamId == team.id }
+                            players.forEach { player ->
+                                Text(text = player.name)
                             }
                         }
                     }
@@ -180,14 +174,22 @@ fun CreateTournamentScreen(
 
     if (showDialog) {
         currentTeam?.let {
+            val players = adminState.createTournamentPlayers.filter { it.teamId == it.id }
             TeamDialog(
                 team = it,
+                players = players,
                 onDismiss = { showDialog = false },
-                onSave = { team ->
+                onSave = { team, updatedPlayers ->
                     if (isEditing) {
                         onAdminEvent(AdminEvent.UpdateTeam(team))
+                        updatedPlayers.forEach { player ->
+                            onAdminEvent(AdminEvent.UpdatePlayer(player))
+                        }
                     } else {
                         onAdminEvent(AdminEvent.AddTeam(team))
+                        updatedPlayers.forEach { player ->
+                            onAdminEvent(AdminEvent.AddPlayer(player))
+                        }
                     }
                     showDialog = false
                 },
@@ -209,7 +211,7 @@ fun CreateTournamentScreen(
                             tournamentName = adminState.createTournamentName,
                             isActive = true
                         )
-                        onAdminEvent(AdminEvent.SaveTournamentInDatabase(tournament, adminState.createTournamentMatches, teams, emptyList()))
+                        onAdminEvent(AdminEvent.SaveTournamentInDatabase(tournament, adminState.createTournamentMatches, teams, adminState.createTournamentPlayers))
                         withContext(Dispatchers.Main) {
                             navController.navigate("logged_in")
                         }
@@ -260,16 +262,17 @@ fun ConfirmCreateTournamentDialog(
 @Composable
 fun TeamDialog(
     team: TeamDetails,
+    players: List<Player>,
     onDismiss: () -> Unit,
-    onSave: (TeamDetails) -> Unit,
+    onSave: (TeamDetails, List<Player>) -> Unit,
     onDelete: (TeamDetails) -> Unit,
 ) {
     var teamName by remember { mutableStateOf(team.teamName) }
 
-    var member1Name by remember { mutableStateOf(team.player1?.name.toString()) }
-    var member1Email by remember { mutableStateOf(team.player1?.email.toString()) }
-    var member2Name by remember { mutableStateOf(team.player2?.name.toString()) }
-    var member2Email by remember { mutableStateOf(team.player2?.email.toString())}
+    var player1Name by remember { mutableStateOf(players.getOrNull(0)?.name ?: "") }
+    var player1Email by remember { mutableStateOf(players.getOrNull(0)?.email ?: "") }
+    var player2Name by remember { mutableStateOf(players.getOrNull(1)?.name ?: "") }
+    var player2Email by remember { mutableStateOf(players.getOrNull(1)?.email ?: "") }
 
     var showConfirmDeleteDialog by remember { mutableStateOf(false) }
 
@@ -295,24 +298,24 @@ fun TeamDialog(
                     label = { Text("Team Name") }
                 )
                 TextField(
-                    value = member1Name,
-                    onValueChange = { member1Name = it },
-                    label = { Text("Member 1 Name") }
+                    value = player1Name,
+                    onValueChange = { player1Name = it },
+                    label = { Text("Player 1 Name") }
                 )
                 TextField(
-                    value = member1Email,
-                    onValueChange = { member1Email = it },
-                    label = { Text("Member 1 Email") }
+                    value = player1Email,
+                    onValueChange = { player1Email = it },
+                    label = { Text("Player 1 Email") }
                 )
                 TextField(
-                    value = member2Name,
-                    onValueChange = { member2Name = it },
-                    label = { Text("Member 2 Name") }
+                    value = player2Name,
+                    onValueChange = { player2Name = it },
+                    label = { Text("Player 2 Name") }
                 )
                 TextField(
-                    value = member2Email,
-                    onValueChange = { member2Email = it },
-                    label = { Text("Member 2 Email") }
+                    value = player2Email,
+                    onValueChange = { player2Email = it },
+                    label = { Text("Player 2 Email") }
                 )
             }
         },
@@ -338,25 +341,23 @@ fun TeamDialog(
                     )
                     Button(
                         onClick = {
-                            onSave(
-                                TeamDetails(
-                                    id = team.id,
-                                    teamName = teamName,
-                                    player1 = Player(
-                                        name = member1Name,
-                                        email = member1Email,
-                                        cupsHit = 0,
-                                        redemptions = 0,
-                                        trickshots = 0
-                                    ),
-                                    player2 = Player(
-                                        name = member2Name,
-                                        email = member2Email,
-                                        cupsHit = 0,
-                                        redemptions = 0,
-                                        trickshots = 0
-                                    )
+                            val updatedPlayers = listOf(
+                                Player(
+                                    id = players.getOrNull(0)?.id ?: 0,
+                                    teamId = team.id,
+                                    name = player1Name,
+                                    email = player1Email
+                                ),
+                                Player(
+                                    id = players.getOrNull(1)?.id ?: 0,
+                                    teamId = team.id,
+                                    name = player2Name,
+                                    email = player2Email
                                 )
+                            )
+                            onSave(
+                                team.copy(teamName = teamName),
+                                updatedPlayers
                             )
                             onDismiss()
                         }
@@ -428,29 +429,3 @@ fun ChangeEventTitleDialog(
         }
     )
 }
-
-
-/*
-val TeamDetailsSaver: Saver<TeamDetails, *> = mapSaver(
-    save = {
-        mapOf(
-            "id" to it.id,
-            "teamName" to it.teamName,
-            "member1Name" to it.member1?.name,
-            "member1Email" to it.member1?.email,
-            "member2Name" to it.member2?.name,
-            "member2Email" to it.member2?.email
-        )
-    },
-    restore = {
-        TeamDetails(
-            it["id"] as String,
-            it["teamName"] as String,
-            it["member1"] as Player,
-            it["member2"] as Player,
-        )
-    }
-)
-
- */
-

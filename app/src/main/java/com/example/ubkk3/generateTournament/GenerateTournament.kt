@@ -87,11 +87,12 @@ fun generateTournament(teams: List<TeamDetails>): List<MatchDetails> {
             for (j in i + 1 until group.size) {
                 matches.add(
                     MatchDetails(
-                        team1 = group[i],
-                        team2 = group[j],
-                        round = "Group ${index + 1}",
+                        tournamentId = 0, // Replace with actual tournament ID
+                        team1Id = group[i].id,
+                        team2Id = group[j].id,
                         team1Won = false,
                         team2Won = false,
+                        round = "Group ${index + 1}"
                     )
                 )
             }
@@ -105,9 +106,8 @@ fun generateRandomTeams(): List<TeamDetails> {
     val teamCount = (Random.nextInt(2, 9) * 4) // Generates a number between 8 and 32 that is divisible by 4
     return List(teamCount) { index ->
         TeamDetails(
-            teamName = "Team ${index + 1}",
-            player1 = Player(name = "Member 1", email = "Email1", cupsHit = 0, redemptions = 0, trickshots = 0),
-            player2 = Player(name = "Member 2", email = "Email2", cupsHit = 0, redemptions = 0, trickshots = 0)
+            matchId = 0, // Replace with actual match ID
+            teamName = "Team ${index + 1}"
         )
     }
 }

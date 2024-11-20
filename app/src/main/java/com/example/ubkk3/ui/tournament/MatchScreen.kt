@@ -26,6 +26,8 @@ import androidx.navigation.NavController
 import com.example.ubkk3.R
 import com.example.ubkk3.firebaseSignIn.UserData
 import com.example.ubkk3.match.MatchDetails
+import com.example.ubkk3.match.Player
+import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
 import com.example.ubkk3.state.TournamentState
 import com.example.ubkk3.ui.event.TournamentEvent
@@ -37,92 +39,97 @@ fun MatchDialog(
     navController: NavController,
     selectedMatch: MatchDetails,
     selectedTournament: Tournament,
+    team1: TeamDetails,
+    team2: TeamDetails,
+    players: Map<Int, List<Player>>,
     userData: UserData?,
     onTournamentEvent: (TournamentEvent) -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
-        AlertDialog(
-            onDismissRequest = {
-                onDismiss()
-                navController.popBackStack()
-            },
-            title = {
-                Text(text = selectedMatch.team1.teamName + "   VS   " + selectedMatch.team2.teamName)
-            },
-            text = {
-                Column(
+    AlertDialog(
+        onDismissRequest = {
+            onDismiss()
+            navController.popBackStack()
+        },
+        title = {
+            Text(text = "${team1.teamName}   VS   ${team2.teamName}")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Top
+            ) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.Top
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        var team1color = Color.White
-                        var team2color = Color.White
+                    var team1color = Color.White
+                    var team2color = Color.White
 
-                        if (selectedMatch.team1Won) {
-                            team1color = Color.Green
-                        }
-                        if (selectedMatch.team2Won) {
-                            team2color = Color.Green
-                        }
-                        Column {
-                            selectedMatch.team1.teamName.let { Text(text = it, color = team1color) }
-                            selectedMatch.team1.player1.name.let { Text(text = it, color = team1color) }
-                            selectedMatch.team1.player2.name.let { Text(text = it, color = team1color) }
-                        }
-                        Column {
-                            selectedMatch.team2.teamName.let { Text(text = it, color = team2color) }
-                            selectedMatch.team2.player1.name.let { Text(text = it, color = team2color) }
-                            selectedMatch.team2.player2.name.let { Text(text = it, color = team2color) }
+                    if (selectedMatch.team1Won == true) {
+                        team1color = Color.Green
+                    }
+                    if (selectedMatch.team2Won == true) {
+                        team2color = Color.Green
+                    }
+                    Column {
+                        Text(text = team1.teamName, color = team1color)
+                        players[team1.id]?.forEach { player ->
+                            Text(text = player.name, color = team1color)
                         }
                     }
-                    if (userData != null) {
-                        if (userData.isAdmin) {
-                            Button(
-                                onClick = {
-                                    //TODO: Handle onClick
-                                }
-                            ) {
-                                Text(text = "Edit Match")
-                            }
-                        }
-                        if (!selectedMatch.team1Won && !selectedMatch.team2Won) {
-                            Button(
-                                onClick = {
-                                    showDialog.value = true
-                                }
-                            ) {
-                                Text(text = "Select winner")
-                            }
+                    Column {
+                        Text(text = team2.teamName, color = team2color)
+                        players[team2.id]?.forEach { player ->
+                            Text(text = player.name, color = team2color)
                         }
                     }
                 }
-            },
-            confirmButton = {
-                if (!selectedMatch.team1Won && !selectedMatch.team2Won) {
-                    Button(
-                        onClick = {
-                            showDialog.value = true
+                if (userData != null) {
+                    if (userData.isAdmin) {
+                        Button(
+                            onClick = {
+                                //TODO: Handle onClick
+                            }
+                        ) {
+                            Text(text = "Edit Match")
                         }
-                    ) {
-                        Text(text = "Select winner")
                     }
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = {
-                        showDialog.value = false
-                        navController.popBackStack()
+                    if (selectedMatch.team1Won == null && selectedMatch.team2Won == null) {
+                        Button(
+                            onClick = {
+                                showDialog.value = true
+                            }
+                        ) {
+                            Text(text = "Select winner")
+                        }
                     }
-                ) {
-                    Text(text = "Close")
                 }
             }
-        )
+        },
+        confirmButton = {
+            if (selectedMatch.team1Won == null && selectedMatch.team2Won == null) {
+                Button(
+                    onClick = {
+                        showDialog.value = true
+                    }
+                ) {
+                    Text(text = "Select winner")
+                }
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = {
+                    showDialog.value = false
+                    navController.popBackStack()
+                }
+            ) {
+                Text(text = "Close")
+            }
+        }
+    )
 
     if (showDialog.value) {
         SelectWinnerDialog(
@@ -130,14 +137,15 @@ fun MatchDialog(
             onSelectWinner = { whichTeamWon ->
                 onTournamentEvent(
                     TournamentEvent.UpdateMatchWinner(
-                        tournamentId = selectedTournament.id,
-                        matchId = selectedMatch.id,
-                        winningTeam = whichTeamWon
+                        selectedMatch.tournamentId,
+                        selectedMatch.id,
+                        if (whichTeamWon == 0) team1.id else team2.id
                     )
                 )
                 showDialog.value = false
             },
-            match = selectedMatch,
+            team1 = team1,
+            team2 = team2,
             navController = navController
         )
     }
@@ -147,7 +155,8 @@ fun MatchDialog(
 fun SelectWinnerDialog(
     onDismiss: () -> Unit,
     onSelectWinner: (whichTeamWon: Int) -> Unit,
-    match: MatchDetails,
+    team1: TeamDetails,
+    team2: TeamDetails,
     navController: NavController
 ) {
     AlertDialog(
@@ -161,7 +170,7 @@ fun SelectWinnerDialog(
                     navController.popBackStack()
                 }
             ) {
-                Text(match.team1.teamName)
+                Text(team1.teamName)
             }
         },
         confirmButton = {
@@ -172,7 +181,7 @@ fun SelectWinnerDialog(
                     navController.popBackStack()
                 }
             ) {
-                Text(match.team2.teamName)
+                Text(team2.teamName)
             }
         }
     )

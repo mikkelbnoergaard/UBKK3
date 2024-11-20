@@ -9,19 +9,12 @@ import com.example.ubkk3.Converters.Converters
 
 @Entity(
     tableName = "player",
-    foreignKeys = [
-        ForeignKey(entity = TeamDetails::class, parentColumns = ["id"], childColumns = ["teamId"])
-    ]
+    indices = [Index(value = ["teamId"])],
+    foreignKeys = [ForeignKey(entity = TeamDetails::class, parentColumns = ["id"], childColumns = ["teamId"])]
 )
-@TypeConverters(Converters::class)
 data class Player(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-
-    val teamId: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val teamId: Int,
     val name: String,
-    val email: String,
-    val cupsHit: Int = 0,
-    val redemptions: Int = 0,
-    val trickshots: Int = 0
+    val email: String
 )

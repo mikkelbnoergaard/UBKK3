@@ -4,7 +4,9 @@ import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.match.Player
 import com.example.ubkk3.match.TeamDetails
 import com.example.ubkk3.match.Tournament
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class TournamentRepository @Inject constructor(
@@ -13,8 +15,59 @@ class TournamentRepository @Inject constructor(
     private val teamDetailsDao: TeamDetailsDao,
     private val playerDao: PlayerDao
 ){
-    suspend fun createTournament(tournament: Tournament) {
-        tournamentDao.createTournament(tournament)
+    suspend fun createTournament(tournament: Tournament): Long {
+        return withContext(Dispatchers.IO) {
+            tournamentDao.insert(tournament)
+        }
+    }
+
+    suspend fun createEmptyMatch(tournamentId: Int): Long {
+        val match = MatchDetails(
+            tournamentId = tournamentId,
+            team1Won = false,
+            team2Won = false,
+            team1Id = 0,
+            team2Id = 0,
+            round = ""
+        )
+        return withContext(Dispatchers.IO) {
+            matchDetailsDao.insert(match)
+        }
+    }
+
+    suspend fun createEmptyTeam(matchId: Int): Long {
+        val team = TeamDetails(
+            matchId = matchId,
+            teamName = "",
+        )
+        return withContext(Dispatchers.IO) {
+            teamDetailsDao.insert(team)
+        }
+    }
+
+    suspend fun createEmptyPlayer(teamId: Int): Long {
+        val player = Player(
+            teamId = teamId,
+            name = "",
+            email = ""
+        )
+        return withContext(Dispatchers.IO) {
+            playerDao.insert(player)
+        }
+    }
+
+    suspend fun getTournamentIdByName(name: String): Int {
+        return withContext(Dispatchers.IO) {
+            tournamentDao.getTournamentIdByName(name)
+        }
+    }
+
+    suspend fun finalizeTournament(tournament: Tournament, matches: List<MatchDetails>, teams: List<TeamDetails>, players: List<Player>) {
+        withContext(Dispatchers.IO) {
+            matches.forEach { matchDetailsDao.update(it) }
+            teams.forEach { teamDetailsDao.update(it) }
+            players.forEach { playerDao.update(it) }
+        }
     }
 
     suspend fun deleteTournament(tournament: Tournament) {
@@ -29,16 +82,10 @@ class TournamentRepository @Inject constructor(
         return tournamentDao.getTournamentById(tournamentId)
     }
 
-    suspend fun getTeamsByMatchId(matchId: Int): Flow<TeamDetails> {
-        return teamDetailsDao.getTeamsByMatchId(matchId)
-    }
-
-    suspend fun getTeamsByTournamentId(tournamentId: Int): List<TeamDetails> {
-        return teamDetailsDao.getTeamsByTournamentId(tournamentId)
-    }
-
     suspend fun getMatchesByTournamentId(tournamentId: Int): List<MatchDetails> {
-        return matchDetailsDao.getMatchesByTournamentId(tournamentId)
+        return withContext(Dispatchers.IO) {
+            matchDetailsDao.getMatchesByTournamentId(tournamentId)
+        }
     }
 
     suspend fun updateTournamentActivityStatus(tournament: Tournament) {
@@ -63,5 +110,17 @@ class TournamentRepository @Inject constructor(
 
     suspend fun insertPlayer(player: Player) {
         playerDao.insert(player)
+    }
+
+    suspend fun getTeamsByMatchId(matchId: Int): List<TeamDetails> {
+        return withContext(Dispatchers.IO) {
+            teamDetailsDao.getTeamsByMatchId(matchId)
+        }
+    }
+
+    suspend fun getPlayersByTeamId(teamId: Int): List<Player> {
+        return withContext(Dispatchers.IO) {
+            playerDao.getPlayersByTeamId(teamId)
+        }
     }
 }

@@ -12,13 +12,16 @@ import kotlinx.coroutines.flow.Flow
 interface TournamentDao {
 
     @Insert
-    suspend fun createTournament(tournament: Tournament)
+    suspend fun insert(tournament: Tournament): Long
 
     @Delete
     suspend fun deleteTournament(tournament: Tournament)
 
     @Query("SELECT * FROM tournament")
     fun observeAll(): Flow<List<Tournament>>
+
+    @Query("SELECT id FROM tournament WHERE tournamentName = :tournamentName LIMIT 1")
+    fun getTournamentIdByName(tournamentName: String): Int
 
     @Query("SELECT * FROM tournament WHERE id = :tournamentId")
     fun getTournamentById(tournamentId: Int): Flow<Tournament>

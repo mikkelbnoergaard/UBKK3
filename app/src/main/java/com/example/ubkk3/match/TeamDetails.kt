@@ -14,7 +14,5 @@ data class TeamDetails(
     val id: Int = 0,
 
     val matchId: Int = 0,
-    var teamName: String =  "",
-    var player1: Player,
-    var player2: Player
+    var teamName: String =  ""
 )
