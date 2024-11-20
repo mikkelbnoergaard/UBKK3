@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.ubkk3.match.MatchDetails
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MatchDetailsDao {
@@ -12,4 +13,7 @@ interface MatchDetailsDao {
 
     @Query("SELECT * FROM matchdetails WHERE tournamentId = :tournamentId")
     suspend fun getMatchesByTournamentId(tournamentId: Int): List<MatchDetails>
+
+    @Query("SELECT * FROM matchdetails WHERE id = :matchId")
+    suspend fun getMatchById(matchId: Int): Flow<MatchDetails>
 }

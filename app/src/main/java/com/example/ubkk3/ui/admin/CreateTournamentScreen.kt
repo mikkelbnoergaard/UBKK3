@@ -207,10 +207,9 @@ fun CreateTournamentScreen(
                         onAdminEvent(AdminEvent.GenerateMatches)
                         val tournament = Tournament(
                             tournamentName = adminState.createTournamentName,
-                            matches = adminState.createTournamentMatches,
                             isActive = true
                         )
-                        onAdminEvent(AdminEvent.SaveTournamentInDatabase)
+                        onAdminEvent(AdminEvent.SaveTournamentInDatabase(tournament, adminState.createTournamentMatches, teams, emptyList()))
                         withContext(Dispatchers.Main) {
                             navController.navigate("logged_in")
                         }

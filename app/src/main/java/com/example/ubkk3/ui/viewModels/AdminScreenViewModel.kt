@@ -15,6 +15,7 @@ import com.example.ubkk3.match.MatchDetails
 import com.example.ubkk3.ui.event.AdminEvent
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -47,6 +48,36 @@ class AdminScreenViewModel(
                 viewModelScope.launch {
                     repository.createTournament(tournamentObject)
                     val tournamentId = repository.getTournamentById(tournamentObject.id).firstOrNull()?.id ?: return@launch
+
+                    adminState.value.createTournamentMatches.forEach { match ->
+                        repository.insertMatchDetails(match.copy(tournamentId = tournamentId))
+                    }
+                    val matchList = repository.getMatchesByTournamentId(tournamentObject.id)
+
+                    adminState.value.createTournamentTeams.forEach { team ->
+                        matchList.forEach { match ->
+                            repository.insertTeamDetails(team.copy(matchId = match.id))
+                        }
+                    }
+
+                    var teamsList = mutableListOf<TeamDetails>()
+
+                    matchList.forEach { match ->
+                        teamsList = (teamsList + repository.getTeamsByMatchId(match.id)) as MutableList<TeamDetails>
+                    }
+                    teamsList.forEach { team ->
+                        repository.insertPlayer(player.copy(teamId = player.id))
+                    }
+
+                    matchList.forEach { match ->
+                        val teams = repository.getTeamsByMatchId(match.id)
+                        teams.forEach { team ->
+                            repository.insertPlayer(player.copy(teamId = team.id))
+                        }
+
+                    adminState.value.createTournamentPlayers.forEach { player ->
+                        repository.insertPlayer(player.copy(teamId = teamId))
+                    }
 
                     adminState.value.createTournamentTeams.forEach { team ->
                         val teamDetails = team.copy(tournamentId = tournamentId)

@@ -29,6 +29,10 @@ class TournamentRepository @Inject constructor(
         return tournamentDao.getTournamentById(tournamentId)
     }
 
+    suspend fun getTeamsByMatchId(matchId: Int): Flow<TeamDetails> {
+        return teamDetailsDao.getTeamsByMatchId(matchId)
+    }
+
     suspend fun getTeamsByTournamentId(tournamentId: Int): List<TeamDetails> {
         return teamDetailsDao.getTeamsByTournamentId(tournamentId)
     }

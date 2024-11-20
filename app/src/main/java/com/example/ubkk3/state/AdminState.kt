@@ -10,6 +10,7 @@ data class AdminState(
     val selectedTournament: Tournament? = null,
 
     //for creating tournaments
+    val createTournamentPlayers: List<Player> = emptyList(),
     val createTournamentTeams: List<TeamDetails> = emptyList(),
     val createTournamentName: String = "",
     val createTournamentMatches: List<MatchDetails> = emptyList()
